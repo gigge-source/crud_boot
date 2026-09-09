@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import ru.kata.spring.boot_security.demo.model.User;
 import ru.kata.spring.boot_security.demo.service.UserService;
 
-import java.util.List;
+import java.security.Principal;
 import java.util.Set;
 
 @Controller
@@ -25,14 +25,12 @@ public class AdminController {
 
     }
 
-
     @GetMapping
-    public String getAllUsers(Model model) {
-
+    public String getAllUsers(Model model, Principal principal) {
+        User currentUser = userService.userByEmail(principal.getName());
         model.addAttribute("users", userService.getAllUsers());
-
+        model.addAttribute("currentUser", currentUser.getEmail());
         return "users";
-
     }
 
     @PostMapping("/add")
@@ -60,5 +58,39 @@ public class AdminController {
         userService.updateUser(user, roleIds);
 
         return "redirect:/admin";
+    }
+
+    // Для страницы добавления пользователя
+    @GetMapping("/add-user")
+    public String addUserForm(Model model, Principal principal) {
+        // Получаем текущего пользователя для навбара
+        User currentUser = userService.userByEmail(principal.getName());
+        model.addAttribute("currentUser", currentUser.getEmail());
+        model.addAttribute("user", new User());
+        // Если нужно передать список ролей для выбора в форме:
+        // model.addAttribute("roles", roleService.findAll());
+        return "add-user"; // имя шаблона (add-user.html)
+    }
+
+    // Для страницы редактирования пользователя
+    @GetMapping("/edit-user")
+    public String editUserForm(@RequestParam("id") Long id, Model model, Principal principal) {
+        User currentUser = userService.userByEmail(principal.getName());
+        model.addAttribute("currentUser", currentUser.getEmail());
+        User user = userService.findUserById(id); // предполагаем, что такой метод есть
+        model.addAttribute("user", user);
+        // если нужны роли:
+        // model.addAttribute("roles", roleService.findAll());
+        return "edit"; // или "edit-user" – смотрите, как назван файл
+    }
+
+    // Для страницы удаления (если нужна отдельная страница подтверждения)
+    @GetMapping("/delete-user")
+    public String deleteUserForm(@RequestParam("id") Long id, Model model, Principal principal) {
+        User currentUser = userService.userByEmail(principal.getName());
+        model.addAttribute("currentUser", currentUser.getEmail());
+        User user = userService.findUserById(id);
+        model.addAttribute("user", user);
+        return "delete"; // или "delete-user"
     }
 }
